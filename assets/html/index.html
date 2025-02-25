@@ -1,1 +1,40 @@
- 
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Book Log</title>
+        <link rel="stylesheet" href="../assets/css/style.css">
+        <script defer src="../assets/js/app.js"></script>
+    </head>
+    
+<body>
+    <header>
+        <h1>My Book Log</h1>
+        <p>Track your reading journey with ease</p>
+    </header>
+    <main>
+        <div class="container">
+            <section id="add-book">
+                <h2>Add a New Book</h2>
+                <form id="book-form">
+                    <input type="text" id="title" placeholder="Book Title" required>
+                    <input type="text" id="author" placeholder="Author" required>
+                    <input type="text" id="genre" placeholder="Genre" required>
+                    <textarea id="review" placeholder="Your Review"></textarea>
+                    <button type="submit">Add Book</button>
+                </form>
+            </section>
+            <section id="book-list">
+                <h2>Book Collection</h2>
+                <ul id="books">
+                    <!-- Book items will appear here -->
+                </ul>
+            </section>
+        </div>
+    </main>
+    <footer>
+        <p>&copy; 2025 Book Log</p>
+    </footer>
+</body>
+</html>
