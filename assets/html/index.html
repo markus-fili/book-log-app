@@ -1,21 +1,27 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Book Log</title>
-        <link rel="stylesheet" href="../css/style.css">
-        <script type="module" src="../js/app.js"></script>
-        
-    </head>
-    
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Log</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <script type="module" src="../js/app.js"></script>
+</head>
 <body>
     <header>
-        <h1>My Book Log</h1>
+        <h1>Markus's Book Log</h1>
         <p>Track your reading journey with ease</p>
     </header>
+    
     <main>
         <div class="container">
+            <!-- Biometric Authentication Section -->
+            <section id="biometric-auth">
+                <h2>Biometric Authentication</h2>
+                <button id="register-biometric">Register Biometric</button>
+                <button id="login-biometric">Login with Biometric</button>
+            </section>
+            
             <section id="add-book">
                 <h2>Add a New Book</h2>
                 <form id="book-form">
@@ -26,6 +32,7 @@
                     <button type="submit">Add Book</button>
                 </form>
             </section>
+
             <section id="book-list">
                 <h2>Book Collection</h2>
                 <ul id="books">
@@ -34,8 +41,9 @@
             </section>
         </div>
     </main>
+    
     <footer>
-        <p>&copy; 2025 Book Log</p>
+        <p>&copy; 2025 Markus's Book Log</p>
     </footer>
 </body>
 </html>

@@ -1,5 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 // Firebase Configuration
 const firebaseConfig = {
@@ -14,6 +15,7 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
+const auth = getAuth();
 const db = getFirestore(app);
 
 // Wait for the DOM to load
@@ -21,15 +23,49 @@ document.addEventListener("DOMContentLoaded", () => {
     const bookForm = document.getElementById("book-form");
     const bookList = document.getElementById("books");
 
+    // Function to show confirmation message
+    function showConfirmationMessage(message) {
+        const confirmationMessage = document.createElement("div");
+        confirmationMessage.classList.add("confirmation-message");
+        confirmationMessage.innerText = message;
+
+        // Add to the page
+        document.body.appendChild(confirmationMessage);
+
+        // Hide after 3 seconds
+        setTimeout(() => {
+            confirmationMessage.remove();
+        }, 3000);
+    }
+
+    // Function to show error message
+    function showErrorMessage(message) {
+        const errorMessage = document.createElement("div");
+        errorMessage.classList.add("error-message");
+        errorMessage.innerText = message;
+
+        // Add to the page
+        document.body.appendChild(errorMessage);
+
+        // Hide after 3 seconds
+        setTimeout(() => {
+            errorMessage.remove();
+        }, 3000);
+    }
+
     // Fetch books from Firestore on page load
     async function fetchBooks() {
         bookList.innerHTML = ""; // Clear the list before adding new items
 
-        const querySnapshot = await getDocs(collection(db, "books"));
-        querySnapshot.forEach((docSnap) => {
-            const book = docSnap.data();
-            displayBook(docSnap.id, book.title, book.author, book.genre, book.review);
-        });
+        try {
+            const querySnapshot = await getDocs(collection(db, "books"));
+            querySnapshot.forEach((docSnap) => {
+                const book = docSnap.data();
+                displayBook(docSnap.id, book.title, book.author, book.genre, book.review);
+            });
+        } catch (error) {
+            showErrorMessage("Error fetching books.");
+        }
     }
 
     // Function to display a book
@@ -46,16 +82,26 @@ document.addEventListener("DOMContentLoaded", () => {
 
         bookList.appendChild(bookItem);
 
+        // Highlight the new book for a few seconds
+        bookItem.classList.add("highlight");
+        setTimeout(() => {
+            bookItem.classList.remove("highlight");
+        }, 2000);
+
         // Delete Book
         bookItem.querySelector(".delete-btn").addEventListener("click", async function () {
             const bookId = this.getAttribute("data-id");
 
             try {
                 await deleteDoc(doc(db, "books", bookId));
-                bookItem.remove();
-                console.log("Book removed successfully");
+                // Show feedback for deletion
+                bookItem.classList.add("deleted");
+                setTimeout(() => {
+                    bookItem.remove();
+                    showConfirmationMessage("Book removed successfully!");
+                }, 1000);  // Delay removal for visual effect
             } catch (error) {
-                console.error("Error removing book:", error);
+                showErrorMessage("Error removing book.");
             }
         });
     }
@@ -72,7 +118,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Validate input
         if (title === "" || author === "" || genre === "") {
-            alert("Please fill in all fields.");
+            showErrorMessage("Please fill in all fields.");
             return;
         }
 
@@ -86,14 +132,78 @@ document.addEventListener("DOMContentLoaded", () => {
             });
 
             displayBook(docRef.id, title, author, genre, review);
-            console.log("Book added successfully:", docRef.id);
+            showConfirmationMessage("Book added successfully!");
         } catch (error) {
-            console.error("Error adding book:", error);
+            showErrorMessage("Error adding book.");
         }
 
         // Clear form
         bookForm.reset();
     });
+
+    // Biometric Registration (Fingerprint/Face recognition)
+    async function registerBiometric() {
+        if (!('credentials' in navigator)) {
+            showErrorMessage("Biometric authentication is not supported on this device.");
+            return;
+        }
+
+        const publicKeyCredentialCreationOptions = {
+            challenge: new Uint8Array([/* Random challenge bytes */]),
+            rp: { name: "Book Log App" },
+            user: {
+                id: new TextEncoder().encode("user_id"), // Use user-specific ID
+                name: "username",
+                displayName: "Username"
+            },
+            pubKeyCredParams: [{ type: "public-key", alg: -7 }]  // Use ES256
+        };
+
+        try {
+            const credential = await navigator.credentials.create({
+                publicKey: publicKeyCredentialCreationOptions
+            });
+            console.log("Biometric registration successful:", credential);
+            // Save the credential (public key) to your server or Firebase for future authentication
+        } catch (error) {
+            showErrorMessage("Biometric registration failed.");
+            console.error("Error during biometric registration:", error);
+        }
+    }
+
+    // Biometric Authentication (Login using Fingerprint/Face recognition)
+    async function authenticateBiometric() {
+        if (!('credentials' in navigator)) {
+            showErrorMessage("Biometric authentication is not supported on this device.");
+            return;
+        }
+
+        const publicKeyCredentialRequestOptions = {
+            challenge: new Uint8Array([/* Random challenge bytes */]),
+            rpId: "your-website.com",
+            allowCredentials: [{
+                id: new TextEncoder().encode("stored-public-key-id"), // Retrieve stored public key ID
+                type: "public-key"
+            }]
+        };
+
+        try {
+            const assertion = await navigator.credentials.get({
+                publicKey: publicKeyCredentialRequestOptions
+            });
+
+            console.log("Biometric authentication successful:", assertion);
+            // After successful authentication, sign in the user using Firebase Auth
+            // You will need to verify the assertion on the server or Firebase
+        } catch (error) {
+            showErrorMessage("Biometric authentication failed.");
+            console.error("Error during biometric authentication:", error);
+        }
+    }
+
+    // Set up login and registration button handlers
+    document.getElementById("register-biometric").addEventListener("click", registerBiometric);
+    document.getElementById("login-biometric").addEventListener("click", authenticateBiometric);
 
     // Fetch books when the page loads
     fetchBooks();

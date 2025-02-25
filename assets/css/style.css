@@ -150,5 +150,63 @@ footer p {
     .book-item {
         padding: 15px;
     }
+
+    /* Confirmation Message Style */
+.confirmation-message {
+    background-color: #4CAF50; /* Green */
+    color: #fff;
+    padding: 10px;
+    text-align: center;
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-radius: 5px;
+    z-index: 9999;
+    opacity: 0;
+    animation: fadeIn 0.5s forwards;
+}
+
+@keyframes fadeIn {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+}
+
+/* Error Message Style */
+.error-message {
+    background-color: #F44336; /* Red */
+    color: #fff;
+    padding: 10px;
+    text-align: center;
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-radius: 5px;
+    z-index: 9999;
+    opacity: 0;
+    animation: fadeIn 0.5s forwards;
+}
+
+/* Highlight New Book */
+.book-item.highlight {
+    background-color: #f0f0f0; /* Light background color for highlight */
+    border: 2px solid #228B22; /* Forest Green border */
+    animation: highlightAnimation 2s ease-out;
+}
+
+@keyframes highlightAnimation {
+    0% { background-color: #f0f0f0; }
+    50% { background-color: #228B22; }
+    100% { background-color: #f0f0f0; }
+}
+
+/* Deleted Book Style (for fade-out effect) */
+.book-item.deleted {
+    background-color: #ffcccc; /* Light red background */
+    opacity: 0;
+    transition: opacity 1s ease;
+}
+
 }
 
