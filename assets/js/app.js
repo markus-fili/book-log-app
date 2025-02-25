@@ -2,14 +2,12 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebas
 import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-
-
 // Firebase Configuration
 const firebaseConfig = {
     apiKey: "AIzaSyBVFjRHq8pXSmDTy2vrqzemipHHP_p0dT0",
     authDomain: "book-log-app-3ac73.firebaseapp.com",
     projectId: "book-log-app-3ac73",
-    storageBucket: "book-log-app-3ac73.appspot.com",  // Fixed URL
+    storageBucket: "book-log-app-3ac73.appspot.com",
     messagingSenderId: "146482671526",
     appId: "1:146482671526:web:ba7681e854baa693a9a967",
     measurementId: "G-QVSN8FBFGW"
@@ -20,25 +18,60 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth();
 const db = getFirestore(app);
 
-// Wait for the DOM to load
 document.addEventListener("DOMContentLoaded", () => {
+    const authButtons = document.getElementById("biometric-auth");
+    const googleSignInButton = document.getElementById("google-signin");
+    const userInfo = document.getElementById("user-info");
+    const welcomeMessage = document.getElementById("welcome-message");
+    const logoutButton = document.getElementById("logout");
+    const notificationArea = document.getElementById("notification-area");
     const bookForm = document.getElementById("book-form");
     const bookList = document.getElementById("books");
 
-    // Function to show confirmation message
-    function showConfirmationMessage(message) {
-        const confirmationMessage = document.createElement("div");
-        confirmationMessage.classList.add("confirmation-message");
-        confirmationMessage.innerText = message;
-
-        // Add to the page
-        document.body.appendChild(confirmationMessage);
-
-        // Hide after 3 seconds
-        setTimeout(() => {
-            confirmationMessage.remove();
-        }, 3000);
+    function showNotification(message, type = "success") {
+        const notification = document.createElement("div");
+        notification.classList.add("notification", type);
+        notification.innerText = message;
+        notificationArea.appendChild(notification);
+        setTimeout(() => notification.remove(), 5000);
     }
+
+    function showUserInfo(user) {
+        authButtons.style.display = "none";
+        googleSignInButton.style.display = "none";
+        userInfo.style.display = "block";
+        welcomeMessage.innerText = `Welcome, ${user.displayName || "User"}!`;
+    }
+
+    async function signInWithGoogle() {
+        const provider = new GoogleAuthProvider();
+        try {
+            const result = await signInWithPopup(auth, provider);
+            showUserInfo(result.user);
+            showNotification(`Signed in as ${result.user.displayName}`);
+        } catch (error) {
+            showNotification("Google Sign-In failed.", "error");
+            console.error(error);
+        }
+    }
+
+    logoutButton.addEventListener("click", () => {
+        auth.signOut().then(() => {
+            authButtons.style.display = "block";
+            googleSignInButton.style.display = "block";
+            userInfo.style.display = "none";
+            showNotification("You have been logged out.");
+        });
+    });
+
+    onAuthStateChanged(auth, (user) => {
+        if (user) showUserInfo(user);
+        else {
+            authButtons.style.display = "block";
+            googleSignInButton.style.display = "block";
+            userInfo.style.display = "none";
+        }
+    });
 
     // Function to show error message
     function showErrorMessage(message) {
@@ -100,7 +133,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 bookItem.classList.add("deleted");
                 setTimeout(() => {
                     bookItem.remove();
-                    showConfirmationMessage("Book removed successfully!");
+                    showNotification("Book removed successfully!");
                 }, 1000);  // Delay removal for visual effect
             } catch (error) {
                 showErrorMessage("Error removing book.");
@@ -134,7 +167,7 @@ document.addEventListener("DOMContentLoaded", () => {
             });
 
             displayBook(docRef.id, title, author, genre, review);
-            showConfirmationMessage("Book added successfully!");
+            showNotification("Book added successfully!");
         } catch (error) {
             showErrorMessage("Error adding book.");
         }
@@ -154,11 +187,11 @@ document.addEventListener("DOMContentLoaded", () => {
             challenge: new Uint8Array([/* Random challenge bytes */]),
             rp: { name: "Book Log App" },
             user: {
-                id: new TextEncoder().encode("user_id"), // Use user-specific ID
+                id: new TextEncoder().encode("user_id"),
                 name: "username",
                 displayName: "Username"
             },
-            pubKeyCredParams: [{ type: "public-key", alg: -7 }]  // Use ES256
+            pubKeyCredParams: [{ type: "public-key", alg: -7 }]
         };
 
         try {
@@ -184,7 +217,7 @@ document.addEventListener("DOMContentLoaded", () => {
             challenge: new Uint8Array([/* Random challenge bytes */]),
             rpId: "your-website.com",
             allowCredentials: [{
-                id: new TextEncoder().encode("stored-public-key-id"), // Retrieve stored public key ID
+                id: new TextEncoder().encode("stored-public-key-id"),
                 type: "public-key"
             }]
         };
@@ -196,7 +229,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
             console.log("Biometric authentication successful:", assertion);
             // After successful authentication, sign in the user using Firebase Auth
-            // You will need to verify the assertion on the server or Firebase
         } catch (error) {
             showErrorMessage("Biometric authentication failed.");
             console.error("Error during biometric authentication:", error);
@@ -211,22 +243,5 @@ document.addEventListener("DOMContentLoaded", () => {
     fetchBooks();
 
     // Google Sign-In
-async function signInWithGoogle() {
-    const provider = new GoogleAuthProvider();
-    
-    try {
-        const result = await signInWithPopup(auth, provider);
-        const user = result.user;
-        showConfirmationMessage(`Welcome, ${user.displayName}!`);
-        console.log("Google Sign-In successful:", user);
-    } catch (error) {
-        showErrorMessage("Google Sign-In failed.");
-        console.error("Error during Google Sign-In:", error);
-    }
-}
-
-// Attach Google Sign-In to a button (make sure you have a button with id="google-signin")
-document.getElementById("google-signin").addEventListener("click", signInWithGoogle);
-
-    
+    googleSignInButton.addEventListener("click", signInWithGoogle);
 });
