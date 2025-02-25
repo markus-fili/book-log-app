@@ -1,6 +1,8 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+
 
 // Firebase Configuration
 const firebaseConfig = {
@@ -207,4 +209,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Fetch books when the page loads
     fetchBooks();
+
+    // Google Sign-In
+async function signInWithGoogle() {
+    const provider = new GoogleAuthProvider();
+    
+    try {
+        const result = await signInWithPopup(auth, provider);
+        const user = result.user;
+        showConfirmationMessage(`Welcome, ${user.displayName}!`);
+        console.log("Google Sign-In successful:", user);
+    } catch (error) {
+        showErrorMessage("Google Sign-In failed.");
+        console.error("Error during Google Sign-In:", error);
+    }
+}
+
+// Attach Google Sign-In to a button (make sure you have a button with id="google-signin")
+document.getElementById("google-signin").addEventListener("click", signInWithGoogle);
+
+    
 });
