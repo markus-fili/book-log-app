@@ -6,7 +6,6 @@
     <title>Book Log</title>
     <link rel="stylesheet" href="assets/css/style.css">
     <script type="module" src="assets/js/app.js"></script>
-
 </head>
 <body>
     <header>
@@ -17,18 +16,17 @@
     <main>
         <div class="container">
 
-        <!-- Notification Area -->
-        <div id="notification-area"></div>
+            <!-- Notification Area -->
+            <div id="notification-area"></div>
 
-        <!-- Google Sign-In Button -->
-        <button id="google-signin">Sign in with Google</button>
+            <!-- Google Sign-In Button -->
+            <button id="google-signin">Sign in with Google</button>
 
-        <!-- User Info Display (Hidden Initially) -->
-        <div id="user-info" style="display: none;">
-        <p id="welcome-message"></p>
-        <button id="logout">Logout</button>
-        </div>
-
+            <!-- User Info Display (Hidden Initially) -->
+            <div id="user-info" style="display: none;">
+                <p id="welcome-message"></p>
+                <button id="logout">Logout</button>
+            </div>
 
             <!-- Biometric Authentication Section -->
             <section id="biometric-auth">
@@ -47,6 +45,13 @@
                     <button type="submit">Add Book</button>
                 </form>
             </section>
+
+            <div>
+                <!-- Chatbot UI -->
+                <textarea id="chat-input" placeholder="Ask a question..."></textarea>
+                <button id="send-btn">Send</button>
+                <div id="chat-history"></div>
+            </div>
 
             <section id="book-list">
                 <h2>Book Collection</h2>

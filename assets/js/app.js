@@ -1,6 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { GoogleGenerativeAI } from "https://esm.sh/@google/generative-ai";
 
 // Firebase Configuration
 const firebaseConfig = {
@@ -18,6 +19,55 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth();
 const db = getFirestore(app);
 
+// Google API Key (directly included)
+const apiKey = "AIzaSyBVFjRHq8pXSmDTy2vrqzemipHHP_p0dT0"; // Replace with your actual API key
+let genAI, model;
+
+// Initialize Google Generative AI
+async function initializeGenerativeAI() {
+    try {
+        genAI = new GoogleGenerativeAI(apiKey);
+        model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        console.log("Google Generative AI initialized successfully.");
+    } catch (error) {
+        console.error("Error initializing Google Generative AI:", error);
+    }
+}
+
+// Function to ask the ChatBot
+async function askChatBot(request) {
+    if (!model) {
+        console.error("Chatbot model is not initialized.");
+        return;
+    }
+    try {
+        const response = await model.generateContent(request);
+        console.log("Response from ChatBot:", response);
+        appendMessage(response.content);
+    } catch (error) {
+        console.error("Error generating content:", error);
+    }
+}
+
+// Chatbot UI Functions
+function appendMessage(message) {
+    const history = document.createElement("div");
+    history.textContent = message;
+    history.className = 'history';
+    document.getElementById("chat-history").appendChild(history);
+    document.getElementById("chat-input").value = ""; // Clear input after sending
+}
+
+document.getElementById("send-btn").addEventListener('click', async () => {
+    const prompt = document.getElementById("chat-input").value.trim().toLowerCase();
+    if (prompt) {
+        askChatBot(prompt); // Sends to the Google Generative AI model
+    } else {
+        appendMessage("Please enter a prompt.");
+    }
+});
+
+// Initialize the page
 document.addEventListener("DOMContentLoaded", () => {
     const authButtons = document.getElementById("biometric-auth");
     const googleSignInButton = document.getElementById("google-signin");
@@ -28,6 +78,18 @@ document.addEventListener("DOMContentLoaded", () => {
     const bookForm = document.getElementById("book-form");
     const bookList = document.getElementById("books");
 
+    // Ensure the 'ask-ai' button exists before attaching the event listener
+    const askAiButton = document.getElementById("ask-ai");
+    if (askAiButton) {
+        askAiButton.addEventListener("click", async () => {
+            const response = await askChatBot("Tell me about book genres.");
+            console.log(response);
+        });
+    } else {
+        console.warn("No 'ask-ai' button found.");
+    }
+
+    // Notification function
     function showNotification(message, type = "success") {
         const notification = document.createElement("div");
         notification.classList.add("notification", type);
@@ -73,25 +135,20 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // Function to show error message
+    // Show error message
     function showErrorMessage(message) {
         const errorMessage = document.createElement("div");
         errorMessage.classList.add("error-message");
         errorMessage.innerText = message;
-
-        // Add to the page
         document.body.appendChild(errorMessage);
-
-        // Hide after 3 seconds
         setTimeout(() => {
             errorMessage.remove();
         }, 3000);
     }
 
-    // Fetch books from Firestore on page load
+    // Fetch books from Firestore
     async function fetchBooks() {
-        bookList.innerHTML = ""; // Clear the list before adding new items
-
+        bookList.innerHTML = "";
         try {
             const querySnapshot = await getDocs(collection(db, "books"));
             querySnapshot.forEach((docSnap) => {
@@ -103,7 +160,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // Function to display a book
+    // Display a book
     function displayBook(id, title, author, genre, review) {
         const bookItem = document.createElement("li");
         bookItem.classList.add("book-item");
@@ -114,27 +171,17 @@ document.addEventListener("DOMContentLoaded", () => {
             <p><strong>Review:</strong> ${review ? review : "No review"}</p>
             <button class="delete-btn" data-id="${id}">Remove</button>
         `;
-
         bookList.appendChild(bookItem);
 
-        // Highlight the new book for a few seconds
-        bookItem.classList.add("highlight");
-        setTimeout(() => {
-            bookItem.classList.remove("highlight");
-        }, 2000);
-
-        // Delete Book
         bookItem.querySelector(".delete-btn").addEventListener("click", async function () {
             const bookId = this.getAttribute("data-id");
-
             try {
                 await deleteDoc(doc(db, "books", bookId));
-                // Show feedback for deletion
                 bookItem.classList.add("deleted");
                 setTimeout(() => {
                     bookItem.remove();
                     showNotification("Book removed successfully!");
-                }, 1000);  // Delay removal for visual effect
+                }, 1000);
             } catch (error) {
                 showErrorMessage("Error removing book.");
             }
@@ -144,21 +191,17 @@ document.addEventListener("DOMContentLoaded", () => {
     // Handle form submission
     bookForm.addEventListener("submit", async function (e) {
         e.preventDefault();
-
-        // Get form values
         const title = document.getElementById("title").value.trim();
         const author = document.getElementById("author").value.trim();
         const genre = document.getElementById("genre").value.trim();
         const review = document.getElementById("review").value.trim();
 
-        // Validate input
         if (title === "" || author === "" || genre === "") {
             showErrorMessage("Please fill in all fields.");
             return;
         }
 
         try {
-            // Save book to Firestore
             const docRef = await addDoc(collection(db, "books"), {
                 title,
                 author,
@@ -172,76 +215,15 @@ document.addEventListener("DOMContentLoaded", () => {
             showErrorMessage("Error adding book.");
         }
 
-        // Clear form
         bookForm.reset();
     });
 
-    // Biometric Registration (Fingerprint/Face recognition)
-    async function registerBiometric() {
-        if (!('credentials' in navigator)) {
-            showErrorMessage("Biometric authentication is not supported on this device.");
-            return;
-        }
-
-        const publicKeyCredentialCreationOptions = {
-            challenge: new Uint8Array([/* Random challenge bytes */]),
-            rp: { name: "Book Log App" },
-            user: {
-                id: new TextEncoder().encode("user_id"),
-                name: "username",
-                displayName: "Username"
-            },
-            pubKeyCredParams: [{ type: "public-key", alg: -7 }]
-        };
-
-        try {
-            const credential = await navigator.credentials.create({
-                publicKey: publicKeyCredentialCreationOptions
-            });
-            console.log("Biometric registration successful:", credential);
-            // Save the credential (public key) to your server or Firebase for future authentication
-        } catch (error) {
-            showErrorMessage("Biometric registration failed.");
-            console.error("Error during biometric registration:", error);
-        }
-    }
-
-    // Biometric Authentication (Login using Fingerprint/Face recognition)
-    async function authenticateBiometric() {
-        if (!('credentials' in navigator)) {
-            showErrorMessage("Biometric authentication is not supported on this device.");
-            return;
-        }
-
-        const publicKeyCredentialRequestOptions = {
-            challenge: new Uint8Array([/* Random challenge bytes */]),
-            rpId: "your-website.com",
-            allowCredentials: [{
-                id: new TextEncoder().encode("stored-public-key-id"),
-                type: "public-key"
-            }]
-        };
-
-        try {
-            const assertion = await navigator.credentials.get({
-                publicKey: publicKeyCredentialRequestOptions
-            });
-
-            console.log("Biometric authentication successful:", assertion);
-            // After successful authentication, sign in the user using Firebase Auth
-        } catch (error) {
-            showErrorMessage("Biometric authentication failed.");
-            console.error("Error during biometric authentication:", error);
-        }
-    }
-
-    // Set up login and registration button handlers
-    document.getElementById("register-biometric").addEventListener("click", registerBiometric);
-    document.getElementById("login-biometric").addEventListener("click", authenticateBiometric);
-
-    // Fetch books when the page loads
+    // Fetch books on page load
     fetchBooks();
 
     // Google Sign-In
     googleSignInButton.addEventListener("click", signInWithGoogle);
+
+    // Initialize Google Generative AI
+    initializeGenerativeAI();
 });
