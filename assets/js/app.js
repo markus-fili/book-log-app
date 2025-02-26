@@ -40,14 +40,43 @@ async function askChatBot(request) {
         console.error("Chatbot model is not initialized.");
         return;
     }
+    appendMessage("Thinking..."); // Show loading message
+
     try {
-        const response = await model.generateContent(request);
-        console.log("Response from ChatBot:", response);
-        appendMessage(response.content);
+        console.log("Sending request to AI:", request);
+        const result = await model.generateContent({ contents: [{ role: "user", parts: [{ text: request }] }] });
+
+        console.log("Full AI Response:", result); // Debugging log
+
+        // Extract response text
+        let responseText = result.response?.candidates?.[0]?.content?.parts?.[0]?.text || "No response from AI.";
+        console.log("Extracted AI Response:", responseText);
+
+        document.getElementById("chat-history").lastChild.remove(); // Remove "Thinking..." message
+        appendMessage(responseText);
+
+        // 📌 Check if AI response contains JSON (which means it's a book entry)
+        if (responseText.includes("{") && responseText.includes("}")) {
+            try {
+                const bookData = JSON.parse(responseText); // Convert JSON text to object
+                if (bookData.title && bookData.author) {
+                    await addBookToFirestore(bookData); // Add book to database
+                    appendMessage(`✅ Added "${bookData.title}" by ${bookData.author} to your collection!`);
+                } else {
+                    appendMessage("⚠️ AI response is missing book details.");
+                }
+            } catch (error) {
+                console.error("Error parsing AI response:", error);
+                appendMessage("⚠️ AI response format is incorrect.");
+            }
+        }
     } catch (error) {
         console.error("Error generating content:", error);
+        appendMessage("Error communicating with AI.");
     }
 }
+
+
 
 // Chatbot UI Functions
 function appendMessage(message) {
