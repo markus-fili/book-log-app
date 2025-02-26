@@ -7,11 +7,16 @@
 
 /* Body Styling */
 body {
-    font-family: 'Fira Code', monospace; /* Coding font */
+    font-family: 'Fira Code', monospace; /* Ensure the body uses the monospace font */
     background-color: #000000; /* Black background */
     color: #FFFFFF; /* White text */
     line-height: 1.6;
     padding: 20px;
+}
+
+/* Other specific elements can inherit the font family as needed */
+h1, h2, h3, p, .book-item p, button, label {
+    font-family: 'Fira Code', monospace;
 }
 
 /* Container for the app content */
